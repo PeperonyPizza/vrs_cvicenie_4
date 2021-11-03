@@ -68,8 +68,7 @@ int main(void)
 
   /*set EXTI source PB4*/
 
-    SYSCFG->EXTICR[2] &= ~SYSCFG_EXTICR2_EXTI4;
-    SYSCFG->EXTICR[2] |= SYSCFG_EXTICR2_EXTI4_PB;  //PB4
+     SYSCFG->EXTICR[1] |= (1 << 0U);  //PB4
     //Enable interrupt from EXTI line 3
   	EXTI->IMR |= EXTI_IMR_IM4;
     //Set EXTI trigger to falling edge
@@ -84,9 +83,9 @@ int main(void)
 */
     /*GPIO configuration, PB4*/
     RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-    GPIOA->MODER &= ~(GPIO_MODER_MODER4);
-    GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR4);
-    GPIOA->PUPDR |= GPIO_PUPDR_PUPDR4_0;
+    GPIOB->MODER &= ~(GPIO_MODER_MODER4);
+    GPIOB->PUPDR &= ~(GPIO_PUPDR_PUPDR4);
+    GPIOB->PUPDR |= GPIO_PUPDR_PUPDR4_0;
 
 
 
@@ -169,32 +168,66 @@ void SystemClock_Config(void)
 
 uint8_t checkButtonState(GPIO_TypeDef* PORT, uint8_t PIN, uint8_t edge, uint8_t samples_window, uint8_t samples_required)
 {
-	  //type your code for "checkButtonState" implementation here:
-	uint8_t button_state = 0, timeout = 0;
 
-	while(button_state < 20 && timeout < 50)
+	uint8_t button_state = 0;
+
+	if(edge == TRIGGER_RISE)
 	{
-		if(!(PORT->IDR & (1 << PIN))/*LL_GPIO_IsInputPinSet(PORT, PIN)*/)
+		//zistit "samples_window" krat za sebou ci je iny stav od "edge" ak "samples_required" krat je opacny stav, tak retunuj 1 inak 0;
+
+		for(int i=0; i<samples_window ;i++)
 		{
-			button_state += 1;
+			if((PORT->IDR & (1 << PIN)))/*LL_GPIO_IsInputPinReset(PORT, PIN)*/
+			{
+				button_state++;
+			}
+			else
+			{
+				button_state=0;
+			}
+
+		}
+
+		if(button_state>=samples_required)
+		{
+			return 1;
 		}
 		else
 		{
-			button_state = 0;
+			return 0;
 		}
 
-		timeout += 1;
-		LL_mDelay(1);
+
+	}
+	else if(edge == TRIGGER_FALL)
+	{
+
+		for(int i=0;i<samples_window;i++)
+		{
+			if(!(PORT->IDR & (1 << PIN)))/*LL_GPIO_IsInputPinSet(PORT, PIN)*/
+			{
+				button_state++;
+			}
+			else
+			{
+				button_state=0;
+			}
+
+		}
+
+		if(button_state>=samples_required)
+		{
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+
+
 	}
 
-	if((button_state >= 20) && (timeout <= 50))
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
+	return 0;
 }
 
 
