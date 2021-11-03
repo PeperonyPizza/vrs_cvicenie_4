@@ -52,15 +52,43 @@ int main(void)
 
   	  //type your code for EXTI configuration (priority, enable EXTI, setup EXTI for input pin, trigger edge) here:
 
+  /*EXTI configuration*/
+  //NVIC_SetPriority(EXTI3_IRQn, 2);
+  //NVIC_EnableIRQ(EXTI3_IRQn);
+  //Set interrupt priority and enable EXTI
+  NVIC->IP[9] |= 2 << 4;
+  NVIC->ISER[0] |= 1 << 9;
+
 
   /* Configure GPIOB-4 pin as an input pin - button */
 
 	  //type your code for GPIO configuration here:
 
+  /*set EXTI source PA3*/
+    SYSCFG->EXTICR[0] &= ~(0xFU << 12U);
+    //Enable interrupt from EXTI line 3
+    EXTI->IMR |= EXTI_IMR_MR3;
+    //Set EXTI trigger to falling edge
+    EXTI->RTSR &= ~(EXTI_IMR_MR3);
+    EXTI->FTSR |= EXTI_IMR_MR3;
+
+    /*GPIO configuration, PA3*/
+    RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+    GPIOA->MODER &= ~(GPIO_MODER_MODER3);
+    GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR3);
+    GPIOA->PUPDR |= GPIO_PUPDR_PUPDR3_0;
+
 
   /* Configure GPIOA-4 pin as an output pin - LED */
 
 	  //type your code for GPIO configuration here:
+    /*GPIO configuration, PB3*/
+    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+    GPIOB->MODER &= ~(GPIO_MODER_MODER3);
+    GPIOB->MODER |= GPIO_MODER_MODER3_0;
+    GPIOB->OTYPER &= ~(GPIO_OTYPER_OT_3);
+    GPIOB->OSPEEDR &= ~(GPIO_OSPEEDER_OSPEEDR3);
+    GPIOB->PUPDR &= ~(GPIO_PUPDR_PUPDR3);
 
 
   while (1)
@@ -120,6 +148,31 @@ void SystemClock_Config(void)
 uint8_t checkButtonState(GPIO_TypeDef* PORT, uint8_t PIN, uint8_t edge, uint8_t samples_window, uint8_t samples_required)
 {
 	  //type your code for "checkButtonState" implementation here:
+	uint8_t button_state = 0, timeout = 0;
+
+	while(button_state < 20 && timeout < 50)
+	{
+		if(!(PORT->IDR & (1 << PIN))/*LL_GPIO_IsInputPinSet(PORT, PIN)*/)
+		{
+			button_state += 1;
+		}
+		else
+		{
+			button_state = 0;
+		}
+
+		timeout += 1;
+		LL_mDelay(1);
+	}
+
+	if((button_state >= 20) && (timeout <= 50))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 
