@@ -56,39 +56,61 @@ int main(void)
   //NVIC_SetPriority(EXTI3_IRQn, 2);
   //NVIC_EnableIRQ(EXTI3_IRQn);
   //Set interrupt priority and enable EXTI
-  NVIC->IP[9] |= 2 << 4;
-  NVIC->ISER[0] |= 1 << 9;
+  //NVIC->IP[9] |= 2 << 4;
+  //NVIC->ISER[0] |= 1 << 9;
+  NVIC_SetPriority(EXTI4_IRQn, 2); //priorita prerušenia
+  NVIC_EnableIRQ(EXTI4_IRQn); //nastavenie prerušenia pre piny Px4
 
 
   /* Configure GPIOB-4 pin as an input pin - button */
 
 	  //type your code for GPIO configuration here:
 
-  /*set EXTI source PA3*/
-    SYSCFG->EXTICR[0] &= ~(0xFU << 12U);
-    //Enable interrupt from EXTI line 3
-    EXTI->IMR |= EXTI_IMR_MR3;
-    //Set EXTI trigger to falling edge
-    EXTI->RTSR &= ~(EXTI_IMR_MR3);
-    EXTI->FTSR |= EXTI_IMR_MR3;
+  /*set EXTI source PB4*/
 
-    /*GPIO configuration, PA3*/
+    SYSCFG->EXTICR[2] &= ~SYSCFG_EXTICR2_EXTI4;
+    SYSCFG->EXTICR[2] |= SYSCFG_EXTICR2_EXTI4_PB;  //PB4
+    //Enable interrupt from EXTI line 3
+  	EXTI->IMR |= EXTI_IMR_IM4;
+    //Set EXTI trigger to falling edge
+    EXTI->RTSR &= ~(EXTI_IMR_MR4);
+    EXTI->FTSR |= EXTI_IMR_MR4;
+
+    /*GPIO configuration, PA3
     RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
     GPIOA->MODER &= ~(GPIO_MODER_MODER3);
     GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR3);
     GPIOA->PUPDR |= GPIO_PUPDR_PUPDR3_0;
+*/
+    /*GPIO configuration, PB4*/
+    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+    GPIOA->MODER &= ~(GPIO_MODER_MODER4);
+    GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR4);
+    GPIOA->PUPDR |= GPIO_PUPDR_PUPDR4_0;
+
+
 
 
   /* Configure GPIOA-4 pin as an output pin - LED */
 
 	  //type your code for GPIO configuration here:
-    /*GPIO configuration, PB3*/
+    /*GPIO configuration, PB3
     RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
     GPIOB->MODER &= ~(GPIO_MODER_MODER3);
     GPIOB->MODER |= GPIO_MODER_MODER3_0;
     GPIOB->OTYPER &= ~(GPIO_OTYPER_OT_3);
     GPIOB->OSPEEDR &= ~(GPIO_OSPEEDER_OSPEEDR3);
     GPIOB->PUPDR &= ~(GPIO_PUPDR_PUPDR3);
+    */
+
+    //type your code for GPIO configuration here:
+       /*GPIO configuration, PB3*/
+       RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+       GPIOA->MODER &= ~(GPIO_MODER_MODER4);
+       GPIOA->MODER |= GPIO_MODER_MODER4_0;
+       GPIOA->OTYPER &= ~(GPIO_OTYPER_OT_4);
+       GPIOA->OSPEEDR &= ~(GPIO_OSPEEDER_OSPEEDR4);
+       GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR4);
 
 
   while (1)
@@ -96,14 +118,14 @@ int main(void)
 	  // Modify the code below so it sets/resets used output pin connected to the LED
 	  if(switch_state)
 	  {
-		  GPIOB->BSRR |= GPIO_BSRR_BS_3;
+		  GPIOA->BSRR |= GPIO_BSRR_BS_4;
 		  for(uint16_t i=0; i<0xFF00; i++){}
-		  GPIOB->BRR |= GPIO_BRR_BR_3;
+		  GPIOA->BRR |= GPIO_BRR_BR_4;
 		  for(uint16_t i=0; i<0xFF00; i++){}
 	  }
 	  else
 	  {
-		  GPIOB->BRR |= GPIO_BRR_BR_3;
+		  GPIOA->BRR |= GPIO_BRR_BR_4;
 	  }
   }
 
@@ -188,7 +210,7 @@ void EXTI4_IRQHandler(void)
 	}
 
 	/* Clear EXTI4 pending register flag */
-
+	EXTI->PR |= (EXTI_PR_PIF4);
 		//type your code for pending register flag clear here:
 }
 
